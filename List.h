@@ -39,6 +39,7 @@ private:
 	Node_List<T>* head = nullptr;
 	Node_List<T>* tail = nullptr;
 
+	Node_List<T>* mem_optimize = nullptr;
 };
 
 
@@ -136,6 +137,7 @@ void List<T>::remove_index(size_t index)
     }
     if(index == 0)
     {
+        mem_optimize = head;
         head = head->next;
     } else{
         Node_List<T> *tmp = head;
@@ -144,9 +146,15 @@ void List<T>::remove_index(size_t index)
             tmp = tmp->next;
             --index;
         }
+        mem_optimize = tmp->next;
         tmp->next = tmp->next->next;
     }
     --Length;
+    if(mem_optimize != nullptr)
+    {
+        free(mem_optimize);
+        mem_optimize = nullptr;
+    }
 }
 
 template <typename T>
@@ -174,6 +182,7 @@ T& List<T>::operator[](size_t i)
     }
     return t;
 }
+
 
 #endif // !LIST_H
 #pragma once
