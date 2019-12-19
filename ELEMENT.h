@@ -30,6 +30,9 @@ enum ele_format{INT_DB,DOUBLE_DB,CHAR_DB,CHARS_DB};
 
 struct ELEMENT
 {
+    ~ELEMENT() {
+
+    }
     element ele;
     ele_format format;
     ELEMENT(const ele_format &type,const string &el);
@@ -41,9 +44,9 @@ struct ELEMENT
 
 /*
  * @define
- *      初始化ELEMENT
+ *      更新ELEMENT
  * @para [type]
- * @para [el]   
+ * @para [el]
  */
 ELEMENT::ELEMENT(const ele_format &type,const string &el)
 {

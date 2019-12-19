@@ -20,10 +20,10 @@ using std::cout;
 #include "ROW.h"
 
 
-struct Table: public ListBTree<ROW>
+struct Table: protected ListBTree<ROW>
 {
     Table() = default;
-    Table(string _name,vector<vector<string>> init_dic,string _store_path)
+    Table(string _name, vector<vector<string>> init_dic, string _store_path)
     {
         WORKING = true;
         dic = init_dic;
@@ -31,11 +31,18 @@ struct Table: public ListBTree<ROW>
         statement = Statement(init_dic);
         store_path = _store_path;
     }
+
+    
     Statement statement;
     int getFilesNum(string path);
+    void getAllFiles(string path, vector<string>& files);
     void Load(string store_path);  // and init Table
     void Save();
-    void Table::getAllFiles(string path, vector<string>& files);
+
+    void delete_init(string command);    //  2019/12/19
+    string now_time();                  //  2019/12/19
+    void select_init(string command);   //  2019/12/19
+    void add_init(string command);
 
 protected:
     vector<vector<string>> dic;
@@ -185,6 +192,7 @@ void Table::Load(string store_path)
         vec_1.insert(vec_1.end(), vec_2.begin(), vec_2.end());
         vec_2.clear();
     }
+    cout << "load done!\n";
     return;
 }
 
@@ -281,5 +289,100 @@ int Table::getFilesNum(string path)
     return num;
 }
 
+/*
+    @define 
+        根据输入的命令选择相应删除函数
+*/
+void Table::delete_init(string command)
+{
+    vector<string> pattern{ "delete (.*) from (.*)",     //建立比较索引
+                           "delete (.*)" };              // 根据原索引删除
+    size_t pattern_match = 0;
+    for (pattern_match = 0; pattern_match < pattern.size(); ++pattern_match)
+    {
+        if (std::regex_match(command, std::regex(pattern[pattern_match])))
+        {
+            break;
+        }
+    }
 
+    ROW tmp_row;
+    std::smatch match_result;
+    if (pattern_match < pattern.size())
+    {
+        std::regex_search(command, match_result, std::regex(pattern[pattern_match]));
+        if (pattern_match == 0)
+        {
+            int i = 0;
+            for (; i < statement.Labels.size(); ++i)
+            {
+                if (statement.Labels[i] == match_result[2])
+                {
+                    tmp_row = ROW(statement.init_ROW, match_result[1], i);
+                    break;
+                }
+            }
+        }
+        else if (pattern_match == 1)
+        {
+            tmp_row = ROW(statement.init_ROW, match_result[1], index);
+        }
+    }
+
+    Delete(tmp_row);
+}
+
+/*
+    @define
+        返回当前时间
+*/
+string Table::now_time()
+{
+    time_t time_now = time(NULL);
+    tm* t_tm = localtime(&time_now);
+    return asctime(t_tm);
+}
+
+/*
+    @define
+        根据输入的命令选择相应的打印方法
+*/
+void Table::select_init(string command)
+{
+    vector<string> pattern{ "select",    // 打印当前表所有内容
+                           "select now()"       // 返回当前时间 
+                            };   
+    size_t pattern_match = 0;
+    for (pattern_match = 0; pattern_match < pattern.size(); ++pattern_match)
+    {
+        if (std::regex_match(command, std::regex(pattern[pattern_match])))
+        {
+            break;
+        }
+    }
+    std::smatch match_result;
+    if (pattern_match < pattern.size())
+    {
+        std::regex_search(command, match_result, std::regex(pattern[pattern_match]));
+        if (pattern_match == 0)
+        {
+            Print();
+        }
+        else if (pattern_match == 1)
+        {
+            cout << now_time();
+        }
+    }
+}
+
+/*
+    @define
+        根据输入的命令选择相应的插入方式
+*/
+void Table::add_init(string command)
+{
+    statement.row << command.substr(7);
+    ListBTree::ADD(statement.row);
+    
+}
 #endif //B_PC_TABLE_H

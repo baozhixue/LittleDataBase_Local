@@ -203,7 +203,6 @@ void ListBTree<T>::Print() {
     }
     Node_LBTree<T> *tmp = root;
     Print2(tmp);
-    cout<<"\n";
 }
 template <typename  T>
 int ListBTree<T>::Compare(T A, T B) {
@@ -395,6 +394,7 @@ void ListBTree<T>::Merge_father_2_child_node(Node_LBTree<T>* father_node)
 template <typename T>
 bool ListBTree<T>::Delete(T el)
 {
+    // 根据 statement中的索引 进行删除
     Find2_return_LB<T> FR2 = Find2(el);
     Node_LBTree<T> *father_node = FR2.father;
     Node_LBTree<T> *find_node = FR2.find_node;

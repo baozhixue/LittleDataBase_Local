@@ -1,4 +1,0 @@
-ADD ID int 
-ADD name string 
-ADD year int 
-SEARCH ID 

@@ -1,8 +1,12 @@
+#define _CRT_SECURE_NO_WARNINGS
+
+
 
 #include <iostream>
 #include <string>
 #include <vector>
 #include <sstream>
+#include <regex>
 
 using std::vector;
 using std::string ;
@@ -13,26 +17,21 @@ using std::stringstream ;
 
 #include "DBCore.h"
 
+
+
 int main() {
 
-    //DBCore db;
-    //db.RUN();
+    DBCore db;
+    db.RUN();
 
-    vector<ROW> vec(10,ROW(vector<ELEMENT>(),0));
+
+
 
     return 0;
 }
 
-
 /*
- *          {   ----------------------------
- *              |TABLE                      |
- *              ----------------------------
- *              |   |Statement              |
- *              |   -------------------------
- *              |       |       ROW         |
- *              |       ---------------------
- *              |           |    ELEMENT    |
- *              |           -----------------   }
- *
- */
+（1）修改逻辑
+（2）提高内存安全性
+
+*/

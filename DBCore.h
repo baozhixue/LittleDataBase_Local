@@ -21,6 +21,7 @@ using std::cout;
 struct DBCore
 {
     void create_new_table(string table_name);
+    void load_old_table(string table_name);
     void RUN();
     MetaCommandResult do_meta_command(const string &command);
     PrepareResult  prepare_statement(const string &command);
@@ -35,7 +36,8 @@ protected:
 
 void DBCore::RUN()
 {
-    create_new_table("LDB");   // 创建一个表
+    //create_new_table("LDB");   // 创建一个表
+    load_old_table("LDB");
     current_table = 0;                    // 当前表
 
     string command_inputs;
@@ -92,6 +94,12 @@ void DBCore::RUN()
     }
 }
 
+void DBCore::load_old_table(string table_name)
+{
+    string store_path = root_path + table_name + "\\";
+    db.push_back(Table());
+    db[current_table].Load(store_path);
+}
 
 void DBCore::create_new_table(string table_name)
 {
@@ -161,17 +169,17 @@ PrepareResult  DBCore::prepare_statement(const string &command)
 {
     if (command.substr(0, 6) == "insert")
     {
-        if(db[current_table].statement.row<< (command.substr(6)))
-        {
-            db[current_table].statement.type = STATEMENT_INSERT;
-            return PREPARE_SUCCESS;
-        } else{
-            db[current_table].statement.type = STATEMENT_INVALID;
-        }
+        db[current_table].statement.type = STATEMENT_INSERT;
+        return PREPARE_SUCCESS;
     }
-    if (command == "select")
+    if (command.substr(0,6) == "select")
     {
         db[current_table].statement.type = STATEMENT_SELECT;
+        return PREPARE_SUCCESS;
+    }
+    if(command.substr(0,6) == "delete")
+    {
+        db[current_table].statement.type = STATEMENT_DELETE;
         return PREPARE_SUCCESS;
     }
 
@@ -183,11 +191,16 @@ ExecuteResult DBCore::execute_statement(const string &command)
     {
         case STATEMENT_INSERT:
             //btree->ADD(statement.row_to_insert);
-            db[current_table].ADD(db[current_table].statement.row);
+            db[current_table].add_init(command);
             return EXECUTE_SUCCESS;
             break;
         case STATEMENT_SELECT:
-            db[current_table].Print();
+            //db[current_table].Print();
+            db[current_table].select_init(command);
+            return EXECUTE_SUCCESS;
+            break;
+        case STATEMENT_DELETE:
+            db[current_table].delete_init(command);
             return EXECUTE_SUCCESS;
             break;
     }

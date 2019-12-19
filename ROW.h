@@ -24,6 +24,14 @@ struct ROW
             index=i;
         }
     }
+    ROW(vector<ELEMENT> tmp,string str,size_t i)
+    {
+        // 初始化删除
+        row2 = tmp;
+        row2[i] = ELEMENT(row2[i].format,str);
+        index = i;
+    }
+
     ROW() = default;
     void operator >>(string &str);
     bool operator<<(string str);
@@ -32,6 +40,7 @@ struct ROW
     bool operator==(const ROW &R);
     friend  std::ostream&  operator<<(std::ostream &output,const ROW& D)
     {
+
         string tmp;
         for(auto el:D.row2)
         {
