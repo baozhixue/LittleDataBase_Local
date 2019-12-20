@@ -9,3 +9,5 @@
 |代码|代码比较混乱    |代码逻辑性强，功能分层   |
 |性能|   |L版本使用ListBtree，节省一定内存.|
 |其他|    暂无|暂无| 
+
+![LDB](https://github.com/baozhixue/LittleDataBase_Local/blob/master/LDB.png)
