@@ -10,4 +10,6 @@
 |性能|   |L版本使用ListBtree，节省一定内存.|
 |其他|    暂无|暂无| 
 
+# 目前代码结构的层次划分
+
 ![LDB](https://github.com/baozhixue/LittleDataBase_Local/blob/master/LDB.png)
