@@ -9,6 +9,7 @@
 #include <io.h>
 #include <fstream>
 #include <direct.h>
+#include <ctime>
 
 using std::ofstream ;
 using std::ifstream ;
@@ -36,22 +37,37 @@ protected:
 
 void DBCore::RUN()
 {
-    //create_new_table("LDB");   // 创建一个表
-    load_old_table("LDB");
     current_table = 0;                    // 当前表
+
+    ifstream inFile;
+    inFile.open("test.txt");
 
     string command_inputs;
     while (true)
     {
-        printf("db > ");
-        getline(cin,command_inputs);
-
-        if (command_inputs[0] == '.')
+        if (db.size() == 0)
         {
-            switch (do_meta_command(command_inputs))
+            cout << "Load or create a table[L or C]: ";
+            getline(cin, command_inputs);
+            if (command_inputs[0] == 'L')
             {
+                load_old_table("LDB");
+            }
+            else
+            {
+                create_new_table("LDB");
+            }
+        }
+        else
+        {
+            printf("db > ");
+            getline(cin, command_inputs);
+            if (command_inputs[0] == '.')
+            {
+                switch (do_meta_command(command_inputs))
+                {
                 case (META_COMMAND_EXIT_SUCCESS):
-                    for(auto t:db)
+                    for (auto t : db)
                     {
                         t.Save();
                     }
@@ -65,12 +81,12 @@ void DBCore::RUN()
                     break;
                 default:
                     break;
+                }
+                continue;
             }
-            continue;
-        }
 
-        switch (prepare_statement(command_inputs))
-        {
+            switch (prepare_statement(command_inputs))
+            {
             case (PREPARE_SUCCESS):
                 break;
             case (PREPARE_UNRECOGNIZED_STATEMENT):
@@ -78,18 +94,19 @@ void DBCore::RUN()
                 break;
             default:
                 break;
-        }
+            }
 
-        switch (execute_statement(command_inputs))
-        {
+            switch (execute_statement(command_inputs))
+            {
             case (EXECUTE_SUCCESS):
-                cout<<"Executed!\n";
+                cout << "Executed!\n";
                 break;
             case (EXECUTE_TABLE_FULL):
                 cout << "Error : Table full.\n";
                 break;
             default:
                 break;
+            }
         }
     }
 }
@@ -163,6 +180,7 @@ MetaCommandResult DBCore::do_meta_command(const string &command)
     {
         return META_COMMAND_LOAD_SUCCESS;
     }
+    
     return META_COMMAND_UNRECOGNIZED_COMMAND;
 }
 PrepareResult  DBCore::prepare_statement(const string &command)

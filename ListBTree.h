@@ -54,12 +54,13 @@ protected:
     Node_LBTree<T>* add(T el, Node_LBTree<T> *tmp);
     void slide_add_key(T row,Node_LBTree<T>* tmp, const size_t index);
     void slide_add_child(Node_LBTree<T>* src, Node_LBTree<T>* tmp, const size_t index);
-    virtual void Print2(Node_LBTree<T>* node);
+    void Print2(Node_LBTree<T>* node);
+    void Print2(Node_LBTree<T>* node,ofstream & out);
     bool Balance_Leaf_Nodes(Node_LBTree<T> * father_node);
     void Merge_father_2_child_node(Node_LBTree<T>* father_node);
     Node_LBTree<T>* root = nullptr;
     size_t index = 0;
-    void operator +=(T el);  //equals B.ADD(el)
+    //void operator +=(T el);  //equals B.ADD(el)
 
     size_t MAX_KEYS_SIZE = 5;
     size_t KEYS_MID = 2;
@@ -90,9 +91,13 @@ Node_LBTree<T>* ListBTree<T>::add(T row, Node_LBTree<T> *tmp)
         size_t i = 0;
         while (i < tmp->keys_size)
         {
-            if(Compare(row,tmp->keys[i]) == -1)
+            if(row < tmp->keys[i])
             {
                 break;
+            }
+            if (row == tmp->keys[i])
+            {
+                return nullptr;
             }
             ++i;
         }
@@ -127,9 +132,13 @@ Node_LBTree<T>* ListBTree<T>::add(T row, Node_LBTree<T> *tmp)
         size_t j = 0;
         while (j < tmp->keys_size)
         {
-            if(Compare(row,tmp->keys[j]) == -1)
+            if(row < tmp->keys[j])
             {
                 break;
+            }
+            if (row == tmp->keys[j])
+            {
+                return nullptr;
             }
             ++j;
         }
@@ -140,9 +149,13 @@ Node_LBTree<T>* ListBTree<T>::add(T row, Node_LBTree<T> *tmp)
             size_t k = 0;
             while (k < tmp->keys_size)
             {
-                if (Compare(re->keys[0], tmp->keys[k]) == -1)
+                if (re->keys[0] < tmp->keys[k])
                 {
                     break;
+                }
+                if (re->keys[0] == tmp->keys[k])
+                {
+                    return nullptr;
                 }
                 ++k;
             }
@@ -239,6 +252,29 @@ void ListBTree<T>::Print2(Node_LBTree<T>* node)
 }
 
 template <typename T>
+void ListBTree<T>::Print2(Node_LBTree<T>* node, ofstream& out)
+{
+    if (node == nullptr)
+    {
+        return;
+    }
+    size_t i = 0;
+    while (i < node->keys_size)
+    {
+        if (node->keys_child_size > i)
+            Print2(node->keys_child[i],out);
+        out << node->keys[i] << "\n";
+        ++i;
+    }
+    if (node->keys_child_size > i)
+    {
+        Print2(node->keys_child[i],out);
+    }
+}
+
+
+
+template <typename T>
 Find2_return_LB<T> ListBTree<T>::Find2(T row)
 {
     Find2_return_LB<T> FR2(root);
@@ -249,12 +285,12 @@ Find2_return_LB<T> ListBTree<T>::Find2(T row)
         int i = 0;
         for (; i < FR2.find_node->keys_size; ++i)
         {
-            if (Compare(row, FR2.find_node->keys[i]) == 0)
+            if (row == FR2.find_node->keys[i])
             {
                 FR2.index = i;
                 return FR2;
             }
-            else if (Compare(row, FR2.find_node->keys[i]) == -1)  // row < keys[i]
+            else if (row < FR2.find_node->keys[i])  // row < keys[i]
             {
                 break;
             }
@@ -310,7 +346,7 @@ bool ListBTree<T>::Balance_Leaf_Nodes(Node_LBTree<T> * father_node)
             if (Left->keys_child_size > 0)
             {
                 Left->keys_child_size -= 1;
-                for (int j = Right->keys_child_size; j > 0; ++j)
+                for (int j = Right->keys_child_size; j > 0; --j)
                 {
                     Right->keys_child[j] = Right->keys_child[j - 1];
                 }
