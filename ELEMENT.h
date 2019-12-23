@@ -30,9 +30,6 @@ enum ele_format{INT_DB,DOUBLE_DB,CHAR_DB,CHARS_DB};
 
 struct ELEMENT
 {
-    ~ELEMENT() {
-
-    }
     element ele;
     ele_format format;
     ELEMENT(const ele_format &type,const string &el);
