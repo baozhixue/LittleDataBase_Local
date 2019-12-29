@@ -10,6 +10,7 @@
 #include <fstream>
 #include <direct.h>
 #include <ctime>
+#include <regex>
 
 using std::ofstream ;
 using std::ifstream ;
@@ -20,102 +21,77 @@ using std::cout;
 #include "Table.h"
 
 struct DBCore
-{
-    void create_new_table(string table_name);
-    void load_old_table(string table_name);
+{ 
     void RUN();
-    MetaCommandResult do_meta_command(const string &command);
-    PrepareResult  prepare_statement(const string &command);
-    ExecuteResult execute_statement(const string &command);
-
+   
 protected:
     vector<Table> db;
     size_t current_table = 0;
     string root_path = ".\\DB\\";
+    bool EXIT = false;    // 若输入为exit则EXIT==TRUE
+
+    PrepareResult  prepare_statement(const string& command);
+    ExecuteResult execute_statement(const string& command);
+
+    void create_new_table(string table_name);
+    void load_old_table(string table_name);
+    string now_time();
+    StatementType running_statement = STATEMENT_NONE;  // DBCore对输入命令的处理结果
+    bool select_init(string);
+    bool insert_init(string);
+    bool create_init(string);
+    bool load_init(string);
+    bool save_init();
+    bool update_init(string);   // 待添加
+    bool delete_init(string);   // 待添加
 };
 
 
 void DBCore::RUN()
 {
-    current_table = 0;                    // 当前表
-
     ifstream inFile;
     inFile.open("test.txt");
 
     string command_inputs;
-    while (true)
+    while (EXIT != true)
     {
-        if (db.size() == 0)
+        printf("db > ");
+        getline(cin, command_inputs);
+
+        switch (prepare_statement(command_inputs))
         {
-            cout << "Load or create a table[L or C]: ";
-            getline(cin, command_inputs);
-            if (command_inputs[0] == 'L')
-            {
-                load_old_table("LDB");
-            }
-            else
-            {
-                create_new_table("LDB");
-            }
+        case (PREPARE_SUCCESS):
+            break;
+        case (PREPARE_UNRECOGNIZED_STATEMENT):
+            cout << "Unrecognized keyword at start of " << command_inputs << " .\n";
+            continue;
+            break;
+        default:
+            break;
         }
-        else
+
+        switch (execute_statement(command_inputs))
         {
-            printf("db > ");
-            getline(cin, command_inputs);
-            if (command_inputs[0] == '.')
-            {
-                switch (do_meta_command(command_inputs))
-                {
-                case (META_COMMAND_EXIT_SUCCESS):
-                    for (auto t : db)
-                    {
-                        t.Save();
-                    }
-                    exit(EXIT_SUCCESS);
-                    break;
-                case (META_COMMAND_UNRECOGNIZED_COMMAND):
-                    cout << "Unrecognized keyword at start of " << command_inputs << " .\n";
-                    break;
-                case (META_COMMAND_LOAD_SUCCESS):
-                    cout << "Load Done!\n";
-                    break;
-                default:
-                    break;
-                }
-                continue;
-            }
-
-            switch (prepare_statement(command_inputs))
-            {
-            case (PREPARE_SUCCESS):
-                break;
-            case (PREPARE_UNRECOGNIZED_STATEMENT):
-                cout << "Unrecognized keyword at start of " << command_inputs << " .\n";
-                break;
-            default:
-                break;
-            }
-
-            switch (execute_statement(command_inputs))
-            {
-            case (EXECUTE_SUCCESS):
-                cout << "Executed!\n";
-                break;
-            case (EXECUTE_TABLE_FULL):
-                cout << "Error : Table full.\n";
-                break;
-            default:
-                break;
-            }
+        case (EXECUTE_SUCCESS):
+            cout << "Executed!\n";
+            break;
+        case (EXECUTE_TABLE_FULL):
+            cout << "Error : Table full.\n";
+            break;
+        default:
+            break;
         }
     }
 }
+
+
+
 
 void DBCore::load_old_table(string table_name)
 {
     string store_path = root_path + table_name + "\\";
     db.push_back(Table());
-    db[current_table].Load(store_path);
+    db.back().Load(store_path,table_name);
 }
 
 void DBCore::create_new_table(string table_name)
@@ -170,58 +146,256 @@ void DBCore::create_new_table(string table_name)
     outFile.close();
 }
 
-MetaCommandResult DBCore::do_meta_command(const string &command)
+
+PrepareResult DBCore::prepare_statement(const string &command)
 {
-    if (strcmp(command.c_str(), ".exit") == 0)
+    if (command == "show tables")
     {
-        return META_COMMAND_EXIT_SUCCESS;
+        for (auto el : db)
+        {
+            cout << el.get_name() << "\n";
+        }
+        running_statement = STATEMENT_INVALID; // 无后续操作
     }
-    else if (strcmp(command.c_str(), ".load") == 0)
+    else if (command.substr(0, 6) == "insert")
     {
-        return META_COMMAND_LOAD_SUCCESS;
+        running_statement = STATEMENT_INSERT;
     }
-    
-    return META_COMMAND_UNRECOGNIZED_COMMAND;
-}
-PrepareResult  DBCore::prepare_statement(const string &command)
-{
-    if (command.substr(0, 6) == "insert")
+    else if (command.substr(0,6) == "select")
     {
-        db[current_table].statement.type = STATEMENT_INSERT;
-        return PREPARE_SUCCESS;
+        running_statement = STATEMENT_SELECT;
     }
-    if (command.substr(0,6) == "select")
+    else if(command.substr(0,6) == "delete")
     {
-        db[current_table].statement.type = STATEMENT_SELECT;
-        return PREPARE_SUCCESS;
+        running_statement = STATEMENT_DELETE;
     }
-    if(command.substr(0,6) == "delete")
+    else if (command == "exit")
     {
-        db[current_table].statement.type = STATEMENT_DELETE;
-        return PREPARE_SUCCESS;
+        running_statement = STATEMENT_EXIT;
+    }
+    else if (command.substr(0, 6) == "create")
+    {
+        running_statement = STATEMENT_CREATE;
+    }
+    else if (command.substr(0, 4) == "load")
+    {
+        running_statement = STATEMENT_LOAD;
     }
 
+    
+    if (running_statement != STATEMENT_NONE)
+    {
+        return PREPARE_SUCCESS;
+    }
     return PREPARE_UNRECOGNIZED_STATEMENT;
 }
 ExecuteResult DBCore::execute_statement(const string &command)
 {
-    switch (db[current_table].statement.type)
+    switch (running_statement)
     {
         case STATEMENT_INSERT:
-            //btree->ADD(statement.row_to_insert);
-            db[current_table].add_init(command);
-            return EXECUTE_SUCCESS;
+            insert_init(command);
             break;
         case STATEMENT_SELECT:
-            //db[current_table].Print();
-            db[current_table].select_init(command);
-            return EXECUTE_SUCCESS;
+            select_init(command);
+            break;
+        case STATEMENT_CREATE:
+            create_init(command);
+            break;
+        case STATEMENT_EXIT:
+            save_init();
+            EXIT = true;
+            break;
+        case STATEMENT_LOAD:
+            load_init(command);
             break;
         case STATEMENT_DELETE:
-            db[current_table].delete_init(command);
-            return EXECUTE_SUCCESS;
+            delete_init(command);
+            break;
+        case STATEMENT_NONE_TABLE:
+            cout << "not exist any table!\n";
             break;
     }
+
+    if (running_statement != STATEMENT_NONE)
+    {
+        running_statement = STATEMENT_NONE;
+        return EXECUTE_SUCCESS;
+    }
+    return EXECUTE_TABLE_FULL;
+}
+
+string DBCore::now_time()
+{
+    time_t time_now = time(NULL);
+    return asctime(localtime(&time_now));
+}
+
+
+bool DBCore::select_init(string command)
+{
+    vector<string> pattern{ "select (.*) from (.*)",         // select LABEL from TABLE_NAME, 打印table内的所有内容
+                            "select now()",                 // 以string格式输出当前时间
+    };
+    
+
+    size_t pattern_match;
+    std::smatch match_result;
+
+    for (pattern_match = 0; pattern_match < pattern.size(); ++pattern_match)
+    {
+        if (std::regex_match(command, std::regex(pattern[pattern_match])))
+        {
+            break;
+        }
+    }
+
+    // 若命令输入不匹配，则输出false
+    
+    if (pattern_match < pattern.size())
+    {
+        std::regex_search(command, match_result, std::regex(pattern[pattern_match]));
+        if (pattern_match == 0)
+        {
+            for (auto &tmp_table : db)
+            {
+                if (tmp_table.get_name() == match_result[2])
+                {   
+                    if (match_result[1] == "*")
+                    {
+                        tmp_table.Print();
+                    }
+                    else
+                    {
+                        cout << "command is not support now!\n";
+                    }
+                    return true;
+                }
+            }
+        }
+        else if (pattern_match == 1)
+        {
+            cout << now_time();
+            return true;
+        }
+        
+    }
+    return false;
+}
+
+/*
+    根据表插入相应数据
+*/
+bool DBCore::insert_init(string command)
+{
+    vector<string> pattern = {
+        "insert into (.*)",
+    };
+
+    size_t pattern_match = 0;
+    std::smatch match_result;
+    string tmp_insert_data;
+    for (pattern_match = 0; pattern_match < pattern.size(); ++pattern_match)
+    {
+        if (std::regex_match(command, std::regex(pattern[pattern_match])))
+        {
+            break;
+        }
+    }
+
+    if (pattern_match < pattern.size())
+    {
+        if (pattern_match == 0)  
+        {
+            std::regex_search(command, match_result, std::regex(pattern[pattern_match]));
+            
+            cout << " ->";
+            getline(cin, tmp_insert_data);
+
+            for (auto &tmp_table : db)
+            {
+                if (tmp_table.get_name() == match_result[1])
+                {
+                    tmp_table.statement.row << tmp_insert_data;
+                    tmp_table.ADD(tmp_table.statement.row);
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/*
+    根据表名创建新表
+*/
+bool DBCore::create_init(string command)
+{
+
+    if (std::regex_match(command, std::regex("create table (.*)")))
+    {
+        std::smatch match_result;
+        std::regex_search(command, match_result, std::regex("create table (.*)"));
+        for (auto tmp_table : db)
+        {
+            // 若表存在则停止创建新表
+            if (tmp_table.get_name() == match_result[1])
+            {
+                return true;
+            }
+        }
+        create_new_table(match_result[1]);
+        return true;
+    }
+    return false;
+}
+
+/*
+    根据表名加载相应表
+*/
+bool DBCore::load_init(string command)
+{
+    if (std::regex_match(command, std::regex("load table (.*)")))
+    {
+        std::smatch match_result;
+        std::regex_search(command, match_result, std::regex("load table (.*)"));
+        load_old_table(match_result[1]);
+        return true;
+    }
+    return false;
+}
+
+/*
+    保存所有已加载表
+*/
+bool DBCore::save_init()
+{
+    for (auto t : db)
+    {
+        t.Save();
+    }
+    return true;
+}
+
+
+/*
+待添加
+    @future function
+*/
+bool DBCore::update_init(string command)
+{
+    //目前仅支持修改整条数据
+    return true;
+}
+
+/*
+待添加
+    @ delete X from T(TABLE)
+*/
+bool DBCore::delete_init(string)
+{
+
+    return true;
 }
 
 #endif //B_PC_DBCORE_H

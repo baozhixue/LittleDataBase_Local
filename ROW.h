@@ -31,7 +31,7 @@ struct ROW
         row2[i] = ELEMENT(row2[i].format,str);
         index = i;
     }
-
+    
     ROW() = default;
     void operator >>(string &str);
     bool operator<<(string str);
@@ -97,5 +97,6 @@ bool ROW::operator<<(string str)
     }
     return true;
 }
+
 
 #endif //B_PC_ROW_H

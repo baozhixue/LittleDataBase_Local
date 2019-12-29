@@ -11,8 +11,6 @@
  */
 
 
-
-
 #ifndef B_PC_ELEMENT_H
 #define B_PC_ELEMENT_H
 
@@ -61,8 +59,11 @@ ELEMENT::ELEMENT(const ele_format &type,const string &el)
             break;
         case CHARS_DB: // string
             ele.STR = (char*)malloc(1 + el.length()* sizeof(char));
-            memcpy(ele.STR,el.c_str(),el.length());
-            ele.STR[el.length()] = '\0';
+            if (ele.STR != nullptr)
+            {
+                memcpy(ele.STR, el.c_str(), el.length() + 1);
+                ele.STR[el.length()] = '\0';
+            }
             break;
     }
 }

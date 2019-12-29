@@ -24,14 +24,12 @@ int main() {
     DBCore db;
     db.RUN();
 
-
-
+    
 
     return 0;
 }
 
 /*
-（1）修改逻辑
-（2）提高内存安全性
+    * 将函数自Table转移至DBCore
 
 */

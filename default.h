@@ -27,8 +27,16 @@ const int ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
 const int TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
 
-enum MetaCommandResult { META_COMMAND_EXIT_SUCCESS, META_COMMAND_UNRECOGNIZED_COMMAND, META_COMMAND_LOAD_SUCCESS };
-enum StatementType { STATEMENT_INSERT, STATEMENT_SELECT, STATEMENT_INVALID ,STATEMENT_DELETE, STATEMENT_NONE};
+enum StatementType { STATEMENT_INSERT,    // 插入一条数据
+                     STATEMENT_SELECT,    // 选择符合条件的数据
+                     STATEMENT_INVALID ,  // 输入命令无效
+                     STATEMENT_DELETE,    // 删除符合条件的数据
+                     STATEMENT_EXIT,      // 退出
+                     STATEMENT_NONE,      // 无后续操作
+                     STATEMENT_CREATE,    // 创建一个新表
+                     STATEMENT_LOAD,      // 加载一个原有表
+                     STATEMENT_NONE_TABLE, // 未加载任何一个表
+                    };
 enum PrepareResult { PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATEMENT };
 enum ExecuteResult { EXECUTE_SUCCESS, EXECUTE_TABLE_FULL };
 
@@ -47,8 +55,6 @@ struct Statement
 };
 
 
-
-
 Statement::Statement(vector<vector<string>> init_dic)
 {
     for(int i = 0; i < init_dic.size() - 1;++i)
@@ -58,14 +64,17 @@ Statement::Statement(vector<vector<string>> init_dic)
             if(init_dic[i][2] == "int")
             {
                 init_ROW.push_back(ELEMENT(INT_DB,"0"));
+                Labels.push_back(init_dic[i][1]);
             }
             else if(init_dic[i][2] == "string")
             {
                 init_ROW.push_back(ELEMENT(CHARS_DB,""));
+                Labels.push_back(init_dic[i][1]);
             }
             else if(init_dic[i][2] == "char")
             {
                 init_ROW.push_back(ELEMENT(CHAR_DB,""));
+                Labels.push_back(init_dic[i][1]);
             }
         }
         if(init_dic[init_dic.size()-1][1] == init_dic[i][1])
