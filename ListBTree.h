@@ -5,491 +5,421 @@
 #ifndef B_PC_LISTBTREE_H
 #define B_PC_LISTBTREE_H
 
-
 #include "List.h"
+using baozhixue::List;
+using std::ofstream;
 
-template <typename T>
-struct Node_LBTree
+namespace baozhixue
 {
-    Node_LBTree(T el){keys.push_back(el); ++keys_size;}
-    Node_LBTree() = default;
-
-    List<T> keys;
-    List<Node_LBTree<T>*>  keys_child;
-    size_t index = 0;
-    size_t keys_size = 0;
-    size_t keys_child_size = 0;
-};
-
-template <typename T>
-struct Find2_return_LB
-{
-    Node_LBTree<T> *father = nullptr,*find_node = nullptr;
-    int index = -1;
-    Find2_return_LB(Node_LBTree<T> * node){father = find_node = node;}
-};
-
-template <typename  T>
-struct ListBTree
-{
-public:
-
-    ListBTree<T>(int max_keys_size)
+    template <typename T>
+    struct Node_LBTree
     {
-        this->MAX_KEYS_SIZE = max_keys_size;
-        this->KEYS_MID = max_keys_size/2;
-    }
-    ListBTree<T>() = default;
+        Node_LBTree(T el) { keys.push_back(el); }
+        Node_LBTree() = default;
 
-    void Print();
-    int Compare(T A, T B); // return -1/0/1
-    bool ADD(T el);
-    bool Delete(T el);
-    Node_LBTree<T>* Find(T row);
-    Find2_return_LB<T> Find2(T row);    // return find_node, father_node
-    void set_root(Node_LBTree<T>* r){root = r;}
-    Node_LBTree<T>* get_root(){ return root;}
+        List<T> keys;
+        List<Node_LBTree<T>*>  keys_child;
+        size_t index = 0;
+        size_t keys_size = 0;
+        size_t keys_child_size = 0;
+    };
 
-protected:
-    Node_LBTree<T>* add(T el, Node_LBTree<T> *tmp);
-    void slide_add_key(T row,Node_LBTree<T>* tmp, const size_t index);
-    void slide_add_child(Node_LBTree<T>* src, Node_LBTree<T>* tmp, const size_t index);
-    void Print2(Node_LBTree<T>* node);
-    void Print2(Node_LBTree<T>* node,ofstream & out);
-    bool Balance_Leaf_Nodes(Node_LBTree<T> * father_node);
-    void Merge_father_2_child_node(Node_LBTree<T>* father_node);
-    Node_LBTree<T>* root = nullptr;
-    size_t index = 0;
-    //void operator +=(T el);  //equals B.ADD(el)
-
-    size_t MAX_KEYS_SIZE = 5;
-    size_t KEYS_MID = 2;
-};
-
-template <typename  T>
-bool ListBTree<T>::ADD(T el) {
-    if (root == nullptr)
+    template <typename T>
+    struct Find2_return_LB
     {
-        root = new Node_LBTree<T>(el);
+        Node_LBTree<T>* father = nullptr, * find_node = nullptr;
+        int index = -1;
+        Find2_return_LB(Node_LBTree<T>* node) { father = find_node = node; }
+    };
+
+    template <typename  T>
+    class ListBTree
+    {
+    public:
+
+        ListBTree<T>(int max_keys_size)
+        {
+            this->MAX_KEYS_SIZE = max_keys_size;
+            this->KEYS_MID = max_keys_size / 2;
+        }
+        ListBTree<T>() = default;
+
+        void Print();
+        bool ADD(T el);
+        bool Delete(T el);
+        Node_LBTree<T>* Find(T row);
+        Find2_return_LB<T> Find2(T row);    // return find_node, father_node
+        void set_root(Node_LBTree<T>* r) { root = r; }
+        Node_LBTree<T>* get_root() { return root; }
+
+    protected:
+        Node_LBTree<T>* add(T el, Node_LBTree<T>* tmp);
+        void Print2(Node_LBTree<T>* node);
+        void Print2(Node_LBTree<T>* node, ofstream& out);
+        bool Balance_Leaf_Nodes(Node_LBTree<T>* father_node);
+        void Merge_father_2_child_node(Node_LBTree<T>* father_node);
+        Node_LBTree<T>* root = nullptr;
+        size_t index = 0;
+        //void operator +=(T el);  //equals B.ADD(el)
+
+        size_t MAX_KEYS_SIZE = 5;
+        size_t KEYS_MID = 2;
+    };
+
+    template <typename  T>
+    bool ListBTree<T>::ADD(T el) {
+        if (root == nullptr)
+        {
+            root = new Node_LBTree<T>(el);
+            return true;
+        }
+        Node_LBTree<T>* tmp = root;
+        tmp = add(el, tmp);
+        if (tmp != nullptr)
+        {
+            root = tmp;
+        }
         return true;
     }
-    Node_LBTree<T>* tmp = root;
-    tmp = add(el, tmp);
-    if (tmp != nullptr)
+
+    template <typename T>
+    Node_LBTree<T>* ListBTree<T>::add(T row, Node_LBTree<T>* tmp)
     {
-        root = tmp;
-    }
-    return true;
-}
-
-template <typename T>
-Node_LBTree<T>* ListBTree<T>::add(T row, Node_LBTree<T> *tmp)
-{
-    Node_LBTree<T>* re = nullptr;
-    if (tmp->keys_child_size == 0)    // 叶节点
-    {
-        size_t i = 0;
-        while (i < tmp->keys_size)
+        Node_LBTree<T>* re = nullptr;
+        if (tmp->keys_child.Size == 0)    // 叶节点
         {
-            if(row < tmp->keys[i])
+            size_t i = 0;
+            while (i < tmp->keys.Size)
             {
-                break;
-            }
-            if (row == tmp->keys[i])
-            {
-                return nullptr;
-            }
-            ++i;
-        }
-
-        // 将新元素加入相应位置
-        slide_add_key(row, tmp, i);
-        // 检测是否达到最大容量，即是否需要拆分
-        if (tmp->keys_size == MAX_KEYS_SIZE)
-        {
-            re = new Node_LBTree<T>(tmp->keys[KEYS_MID]);
-            re->index = ++index;
-
-            Node_LBTree<T>* key2 = new Node_LBTree<T>(); key2->index = ++index;
-            for (size_t i2 = KEYS_MID + 1; i2 < MAX_KEYS_SIZE; ++i2)
-            {
-                key2->keys.push_back(tmp->keys[i2]);
-                key2->keys_size += 1;
-            }
-
-            tmp->keys_size = KEYS_MID;
-            if (tmp == root)
-            {
-                re->keys_child.push_back(tmp);
-                re->keys_child_size += 1;
-            }
-            re->keys_child.push_back(key2);
-            re->keys_child_size += 1;
-        }
-    }
-    else
-    {
-        size_t j = 0;
-        while (j < tmp->keys_size)
-        {
-            if(row < tmp->keys[j])
-            {
-                break;
-            }
-            if (row == tmp->keys[j])
-            {
-                return nullptr;
-            }
-            ++j;
-        }
-        re = add(row, tmp->keys_child[j]);
-
-        if (re != nullptr)
-        {
-            size_t k = 0;
-            while (k < tmp->keys_size)
-            {
-                if (re->keys[0] < tmp->keys[k])
+                if (row < tmp->keys[i])
                 {
                     break;
                 }
-                if (re->keys[0] == tmp->keys[k])
+                if (row == tmp->keys[i])
                 {
                     return nullptr;
                 }
-                ++k;
+                ++i;
             }
-            slide_add_key(re->keys[0], tmp, k);
-            slide_add_child(re->keys_child[0], tmp, k + 1);
-            re = nullptr;
 
-            if (tmp->keys_size == MAX_KEYS_SIZE)
+            // 将新元素加入相应位置
+            tmp->keys.insert(row, i);
+            // 检测是否达到最大容量，即是否需要拆分
+            if (tmp->keys.Size == MAX_KEYS_SIZE)
             {
                 re = new Node_LBTree<T>(tmp->keys[KEYS_MID]);
-                re->index = ++index;
-
-                Node_LBTree<T>* key2 = new Node_LBTree<T>(); key2->index = ++index;
-                for (size_t i2 = KEYS_MID + 1; i2 < MAX_KEYS_SIZE; ++i2)
-                {
-                    key2->keys.push_back(tmp->keys[i2]);
-                    key2->keys_size += 1;
-                    key2->keys_child.push_back(tmp->keys_child[i2]);
-                    key2->keys_child_size += 1;
-                }
-                key2->keys_child.push_back(tmp->keys_child[MAX_KEYS_SIZE]);
-                key2->keys_child_size += 1;
-
-                tmp->keys_size = KEYS_MID;
-                tmp->keys_child_size = KEYS_MID + 1;
+                Node_LBTree<T>* key2 = new Node_LBTree<T>();
+                key2->keys = *tmp->keys.cut(KEYS_MID + 1);
+                tmp->keys.resize(KEYS_MID);
                 if (tmp == root)
                 {
                     re->keys_child.push_back(tmp);
-                    re->keys_child_size += 1;
                 }
                 re->keys_child.push_back(key2);
-                re->keys_child_size += 1;
             }
         }
-    }
-    return re;
-}
-
-template <typename T>
-void ListBTree<T>::slide_add_key(T row,Node_LBTree<T>* tmp, const size_t index)
-{
-    tmp->keys.insert(row,index);
-    tmp->keys_size += 1;
-}
-template <typename T>
-void ListBTree<T>::slide_add_child(Node_LBTree<T> *src, Node_LBTree<T>* tmp, const size_t index)
-{
-    tmp->keys_child.insert(src,index);
-    tmp->keys_child_size += 1;
-}
-
-
-template <typename  T>
-void ListBTree<T>::Print() {
-    if (root == nullptr)
-    {
-        return;
-    }
-    Node_LBTree<T> *tmp = root;
-    Print2(tmp);
-}
-template <typename  T>
-int ListBTree<T>::Compare(T A, T B) {
-    if(A > B)
-    {
-        return 1;
-    }
-    else if(A < B)
-    {
-        return -1;
-    }
-    return 0;
-}
-
-template <typename T>
-void ListBTree<T>::Print2(Node_LBTree<T>* node)
-{
-    if (node == nullptr)
-    {
-        return;
-    }
-    size_t i = 0;
-    while (i < node->keys_size)
-    {
-        if (node->keys_child_size > i)
-            Print2(node->keys_child[i]);
-        cout << node->keys[i] << "\n";
-        ++i;
-    }
-    if (node->keys_child_size > i)
-    {
-        Print2(node->keys_child[i]);
-    }
-}
-
-template <typename T>
-void ListBTree<T>::Print2(Node_LBTree<T>* node, ofstream& out)
-{
-    if (node == nullptr)
-    {
-        return;
-    }
-    size_t i = 0;
-    while (i < node->keys_size)
-    {
-        if (node->keys_child_size > i)
-            Print2(node->keys_child[i],out);
-        out << node->keys[i] << "\n";
-        ++i;
-    }
-    if (node->keys_child_size > i)
-    {
-        Print2(node->keys_child[i],out);
-    }
-}
-
-
-
-template <typename T>
-Find2_return_LB<T> ListBTree<T>::Find2(T row)
-{
-    Find2_return_LB<T> FR2(root);
-    FR2.index = -1;
-
-    while (FR2.find_node != nullptr)
-    {
-        int i = 0;
-        for (; i < FR2.find_node->keys_size; ++i)
+        else
         {
-            if (row == FR2.find_node->keys[i])
+            size_t j = 0;
+            while (j < tmp->keys.Size)
             {
-                FR2.index = i;
-                return FR2;
+                if (row < tmp->keys[j])
+                {
+                    break;
+                }
+                if (row == tmp->keys[j])
+                {
+                    return nullptr;
+                }
+                ++j;
             }
-            else if (row < FR2.find_node->keys[i])  // row < keys[i]
+            re = add(row, tmp->keys_child[j]);
+
+            if (re != nullptr)
+            {
+                size_t k = 0;
+                while (k < tmp->keys.Size)
+                {
+                    if (re->keys[0] < tmp->keys[k])
+                    {
+                        break;
+                    }
+                    ++k;
+                }
+                tmp->keys.insert(re->keys[0], k);
+                tmp->keys_child.insert(re->keys_child[0], k + 1);
+                re = nullptr;
+
+                if (tmp->keys.Size == MAX_KEYS_SIZE)
+                {
+                    re = new Node_LBTree<T>(tmp->keys[KEYS_MID]);
+                    Node_LBTree<T>* key2 = new Node_LBTree<T>();
+                    key2->keys = *tmp->keys.cut(KEYS_MID + 1);
+                    key2->keys_child = *(tmp->keys_child.cut(KEYS_MID + 1));
+                    key2->keys.resize(KEYS_MID);
+                    key2->keys_child.resize(KEYS_MID + 1);
+                    tmp->keys.resize(KEYS_MID);
+                    if (tmp == root)
+                    {
+                        re->keys_child.push_back(tmp);
+                    }
+                    re->keys_child.push_back(key2);
+                }
+            }
+        }
+        return re;
+    }
+
+    template <typename  T>
+    void ListBTree<T>::Print() {
+        if (root == nullptr)
+        {
+            return;
+        }
+        Node_LBTree<T>* tmp = root;
+        Print2(tmp);
+    }
+
+
+    template <typename T>
+    void ListBTree<T>::Print2(Node_LBTree<T>* node)
+    {
+        if (node == nullptr)
+        {
+            return;
+        }
+        size_t i = 0;
+        while (i < node->keys.Size)
+        {
+            if (node->keys_child.Size > i)
+                Print2(node->keys_child[i]);
+            cout << node->keys[i] << "\n";
+         
+            ++i;
+        }
+        if (node->keys_child.Size > i)
+        {
+            Print2(node->keys_child[i]);
+        }
+    }
+
+    template <typename T>
+    void ListBTree<T>::Print2(Node_LBTree<T>* node, ofstream& out)
+    {
+        if (node == nullptr)
+        {
+            return;
+        }
+        size_t i = 0;
+        while (i < node->keys.Size)
+        {
+            if (node->keys_child.Size > i)
+                Print2(node->keys_child[i], out);
+            out << node->keys[i] << "\n";
+            ++i;
+        }
+        if (node->keys_child.Size > i)
+        {
+            Print2(node->keys_child[i], out);
+        }
+    }
+
+
+
+    template <typename T>
+    Find2_return_LB<T> ListBTree<T>::Find2(T row)
+    {
+        Find2_return_LB<T> FR2(root);
+        FR2.index = -1;
+
+        while (FR2.find_node != nullptr)
+        {
+            int i = 0;
+            for (; i < FR2.find_node->keys.Size; ++i)
+            {
+                if (row == FR2.find_node->keys[i])
+                {
+                    FR2.index = i;
+                    return FR2;
+                }
+                else if (row < FR2.find_node->keys[i])  // row < keys[i]
+                {
+                    break;
+                }
+            }
+            FR2.father = FR2.find_node;
+            if (FR2.find_node->keys_child.Size > 0)
+            {
+                FR2.find_node = FR2.find_node->keys_child[i];
+            }
+            else
+            {
+                FR2.find_node = nullptr;
+            }
+        }
+        return FR2;
+    }
+
+
+    template <typename T>
+    bool ListBTree<T>::Balance_Leaf_Nodes(Node_LBTree<T>* father_node)
+    {
+        if (father_node->keys_child_size == 0)
+        {
+            return false;
+        }
+
+        // 寻找第一个不满足条件的节点
+        size_t index = 0;
+        Node_LBTree<T>* Left, * Right;
+        for (; index < father_node->keys_size; ++index)
+        {
+            if (father_node->keys_child[index]->keys.Size < KEYS_MID)
             {
                 break;
             }
         }
-        FR2.father = FR2.find_node;
-        if (FR2.find_node->keys_child_size > 0)
-        {
-            FR2.find_node = FR2.find_node->keys_child[i];
-        }
-        else
-        {
-            FR2.find_node = nullptr;
-        }
-    }
-    return FR2;
-}
 
+        // 检测节点左侧兄弟是否满足替换
+        if (index > 0)
+        {
+            Right = father_node->keys_child[index];
+            if (father_node->keys_child[index - 1]->keys.Size > KEYS_MID)
+            {
+                Left = father_node->keys_child[index - 1];
+                Right->keys.push_front(father_node->keys[index - 1]);
 
-template <typename T>
-bool ListBTree<T>::Balance_Leaf_Nodes(Node_LBTree<T> * father_node)
-{
-    if (father_node->keys_child_size == 0)
-    {
+                father_node->keys[index - 1] = Left->keys.tail->element;
+                Left->keys.pop_back();
+
+                if (Left->keys_child_size > 0)
+                {
+                    Right->keys_child.push_front(Left->keys_child.tail->element);
+                    Left->keys_child.pop_back();
+                }
+                return true;
+            }
+        }
+        // 检测右侧
+        if (index < father_node->keys.Size)
+        {
+            Left = father_node->keys_child[index];
+            if (father_node->keys_child[index + 1]->keys.Size > KEYS_MID)
+            {
+                Right = father_node->keys_child[index + 1];
+                Right->keys.push_back(father_node->keys[index]);
+
+                father_node->keys[index] = Left->keys[0];
+                Left->keys.pop_front();
+
+                if (Left->keys_child_size > 0)
+                {
+                    Right->keys_child.push_back(Left->keys_child.tail->element);
+                    Left->keys_child.pop_front();
+                }
+                return true;
+            }
+        }
         return false;
     }
-    size_t index = 0;
-    Node_LBTree<T>* Left, * Right;
-    for (; index < father_node->keys_size; ++index)
-    {
-        if (father_node->keys_child[index]->keys_size < KEYS_MID)
-        {
-            break;
-        }
-    }
 
-    // 检测左侧
-    if (index > 0)
+    template <typename T>
+    void ListBTree<T>::Merge_father_2_child_node(Node_LBTree<T>* father_node)
     {
-        Right = father_node->keys_child[index];
-        if (father_node->keys_child[index - 1]->keys_size > KEYS_MID)
+        //
+        int index = 0;
+        for (; index < father_node->keys.Size - 1; ++index)
         {
-            Left = father_node->keys_child[index - 1];
-
-            for (int i = Right->keys_size; i > 0; --i)
+            if (father_node->keys_child[index]->keys.Size < KEYS_MID)
             {
-                Right->keys[i] = Right->keys[i - 1];
+                break;
             }
-            Right->keys_size += 1;
-            Right->keys[0] = father_node->keys[index - 1];
-            Left->keys_size -= 1;
-            father_node->keys[index - 1] = Left->keys[Left->keys_size];
+        }
+        Node_LBTree<T>* A, * B;
+        A = father_node->keys_child[index];
+        B = father_node->keys_child[index + 1];
 
-            if (Left->keys_child_size > 0)
+        A->keys.push_back(father_node->keys[index]);
+
+        for (int i = 0; i < B->keys.Size; ++i)
+        {
+            A->keys.push_back(B->keys[i]);
+        }
+        for (int i = 0; i < B->keys_child.Size; ++i)
+        {
+            A->keys_child.push_back(B->keys_child[i]);
+        }
+        father_node->keys.remove_index(index);
+        father_node->keys_child.remove_index(index + 1);
+    }
+
+    template <typename T>
+    bool ListBTree<T>::Delete(T el)
+    {
+        // 根据 statement中的索引 进行删除
+        Find2_return_LB<T> FR2 = Find2(el);
+        Node_LBTree<T>* father_node = FR2.father;
+        Node_LBTree<T>* find_node = FR2.find_node;
+        size_t index = FR2.index;
+        Node_LBTree<T>* tmp = nullptr;
+        if (find_node != nullptr)
+        {
+            if (find_node->keys_child.Size > 0)   // find 不是叶节点
             {
-                Left->keys_child_size -= 1;
-                for (int j = Right->keys_child_size; j > 0; --j)
-                {
-                    Right->keys_child[j] = Right->keys_child[j - 1];
-                }
-                Right->keys_child[0] = Left->keys_child[Left->keys_child_size];
-                Right->keys_child_size += 1;
-            }
-            return true;
-        }
-    }
-    // 检测右侧
-    if (index < father_node->keys_size)
-    {
-        Left = father_node->keys_child[index];
-        if (father_node->keys_child[index + 1]->keys_size > KEYS_MID)
-        {
-            Right = father_node->keys_child[index+1];
-            Right->keys[Right->keys_size] = father_node->keys[index];
-            Right->keys_size += 1;
-            father_node->keys[index] = Left->keys[0];
-            Left->keys_size -= 1;
-
-            if (Left->keys_child_size > 0)
-            {
-                Right->keys_child[Right->keys_child_size] = Left->keys_child[0];
-                Right->keys_child_size += 1;
-                Left->keys_child_size -= 1;
-                for (int i = 0; i < Left->keys_child_size; ++i)
-                {
-                    Left->keys_child[i] = Left->keys_child[i + 1];
-                }
-            }
-
-            return true;
-        }
-    }
-    return false;
-}
-
-template <typename T>
-void ListBTree<T>::Merge_father_2_child_node(Node_LBTree<T>* father_node)
-{
-//
-    int index = 0;
-    for (; index < father_node->keys_size - 1; ++index)
-    {
-        if (father_node->keys_child[index]->keys_size < KEYS_MID)
-        {
-            break;
-        }
-    }
-    Node_LBTree<T>* A, * B;
-    A = father_node->keys_child[index];
-    B = father_node->keys_child[index + 1];
-
-    A->keys[A->keys_size] = father_node->keys[index];
-
-    A->keys_size += 1;
-    for (int i = 0; i < B->keys_size; ++i)
-    {
-        A->keys[A->keys_size] = B->keys[i];
-        A->keys_size += 1;
-    }
-    if (B->keys_child_size > 0)
-    {
-        for (int i = 0; i < B->keys_child_size; ++i)
-        {
-            A->keys_child[A->keys_child_size] = B->keys_child[i];
-            A->keys_child_size += 1;
-        }
-    }
-    for (; index < father_node->keys_size-1; ++index)
-    {
-        father_node->keys[index] = father_node->keys[index + 1];
-        father_node->keys_child[index + 1] = father_node->keys_child[index + 2];
-    }
-
-    father_node->keys_size -= 1;
-    father_node->keys_child_size -= 1;
-}
-
-template <typename T>
-bool ListBTree<T>::Delete(T el)
-{
-    // 根据 statement中的索引 进行删除
-    Find2_return_LB<T> FR2 = Find2(el);
-    Node_LBTree<T> *father_node = FR2.father;
-    Node_LBTree<T> *find_node = FR2.find_node;
-    size_t index = FR2.index;
-    Node_LBTree<T> *tmp = nullptr;
-    if(find_node != nullptr)
-    {
-        if(find_node->keys_child_size > 0)   // find 不是叶节点
-        {
-            // 寻找最接近的后继节点,并交换存储的值
-            while (find_node->keys_child_size > 0)
-            {
-                father_node = find_node; // 父节点下移
-                tmp = find_node->keys_child[index + 1];
-                find_node->keys[index] = tmp->keys[0];
-                find_node = tmp;
+                // 寻找最接近的后继节点,并交换存储的值
+                father_node = find_node;
+                find_node = find_node->keys_child[index + 1];
                 index = 0;
-            }
-        }
-
-        // 在叶节点中删除该值
-        find_node->keys_size -=1;
-        find_node->keys.remove_index(index);
-
-        while (true)
-        {
-            if(find_node->keys_size >= KEYS_MID || find_node == root) // 没有发生下溢，即节点数量>=MAX_KEYS_SIZE/2; 或者节点为根节点
-            {
-                return true;
-            }
-            else  if(Balance_Leaf_Nodes(father_node))   //find_node 左节点或右节点可以足够平衡
-            {
-                return true;
-            }
-            else if(father_node == root)    // find_node 父节点是根节点
-            {
-                if(father_node->keys_size == 1) // 父节点只有一个值
+                while (find_node->keys_child.Size > 0)
                 {
-                    // 合并父节点和子节点
-                    Merge_father_2_child_node(root);
+                    father_node = find_node; // 父节点下移
+                    find_node = find_node->keys_child[0];
                 }
-                else
+                FR2.find_node->keys[FR2.index] = find_node->keys[0];
+                find_node->keys.pop_front();
+            }
+            else
+            {
+                // 在叶节点中删除该值
+                find_node->keys.remove_index(index);
+            }
+            
+            while (true)
+            {
+                if (find_node->keys.Size >= KEYS_MID || find_node == root) // 没有发生下溢，即节点数量>=MAX_KEYS_SIZE/2; 或者节点为根节点
                 {
-                    // 合并同级节点
+                    return true;
+                }
+                else  if (Balance_Leaf_Nodes(father_node))   //find_node 左节点或右节点可以足够平衡
+                {
+                    return true;
+                }
+                else if (father_node == root)    // find_node 父节点是根节点
+                {
+                    if (father_node->keys.Size == 1) // 父节点只有一个值
+                    {
+                        // 合并父节点和子节点
+                        Merge_father_2_child_node(root);
+                    }
+                    else
+                    {
+                        // 合并同级节点
+                        Merge_father_2_child_node(father_node);
+                    }
+                    return true;
+                }
+                else  //合并find_node和同级节点,node等于父亲节点
+                {
                     Merge_father_2_child_node(father_node);
+                    FR2 = Find2(father_node->keys[0]);
+                    father_node = FR2.father;
+                    find_node = FR2.find_node;
+                    index = FR2.index;
                 }
-                return true;
-            }
-            else  //合并find_node和同级节点,node等于父亲节点
-            {
-                Merge_father_2_child_node(father_node);
-                FR2 = Find2(father_node->keys[0]);
-                father_node = FR2.father;
-                find_node = FR2.find_node;
-                index = FR2.index;
             }
         }
+        return false;
     }
-    return false;
-}
 
+}
 #endif //B_PC_LISTBTREE_H

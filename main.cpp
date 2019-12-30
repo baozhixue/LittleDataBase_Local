@@ -1,5 +1,10 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+/*
+// 20191230, 10s   -> laptop
+             5s    -> PC
+
+*/
 
 
 #include <iostream>
@@ -17,19 +22,16 @@ using std::stringstream ;
 
 #include "DBCore.h"
 
-
-
 int main() {
 
-    DBCore db;
+    baozhixue::DBCore db;
     db.RUN();
 
-    
 
     return 0;
 }
 
 /*
-    * 将函数自Table转移至DBCore
+   在ListNode中加入析构函数
 
 */
