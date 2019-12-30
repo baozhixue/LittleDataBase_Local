@@ -94,13 +94,14 @@ void List<T>::insert(T el,size_t index)
         push_back(el);
     } else{
         Node_List<T> *tmp = head;
-        while (index>0)
+        while (index>1)
         {
             tmp = tmp->next;
             --index;
         }
         tmp->next = new Node_List<T>(el,tmp->next);
     }
+    ++Length;
 }
 
 template <typename T>
