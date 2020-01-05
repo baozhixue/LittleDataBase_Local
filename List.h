@@ -146,9 +146,10 @@ namespace baozhixue
         {
             return;
         }
-        mem_optimize = head;
+        Node_List<T>* dst = nullptr;
         if (index == 0)
         {
+            dst = head;
             if (head == tail)
             {
                 head = tail = nullptr;
@@ -159,12 +160,13 @@ namespace baozhixue
             }
         }
         else {
-            Node_List<T>* pre = nullptr;
+            
             while (index > 1)
             {
                 mem_optimize = mem_optimize->next;
                 --index;
             }
+            dst = mem_optimize->next;
             if (mem_optimize->next == tail)
             {
                 tail = mem_optimize;
@@ -175,11 +177,7 @@ namespace baozhixue
             }
         }
         --Size;
-        /*if (mem_optimize != nullptr)
-        {
-            free(mem_optimize);
-            mem_optimize = nullptr;
-        }*/
+        delete dst;
     }
 
     template <typename T>
@@ -220,7 +218,11 @@ namespace baozhixue
             return;
         }
         //free(cut(new_Size));
-        cut(new_Size);
+        List<T>* dst = cut(new_Size);
+        while (dst->Size>0)
+        {
+            dst->pop_front();
+        }
     }
 
     /*
@@ -283,14 +285,17 @@ namespace baozhixue
                 mem_optimize = mem_optimize->next;
             }
             tail = mem_optimize;
+            mem_optimize = tail->next;
             tail->next = nullptr;
         }
+        delete mem_optimize;
         --Size;
     }
 
     template <typename T>
     void List<T>::pop_front()
     {
+        mem_optimize = head;
         if (head == nullptr)
         {
             return;
@@ -306,6 +311,7 @@ namespace baozhixue
             head = head->next;
             //free(mem_optimize);
         }
+        free(mem_optimize);
         --Size;
     }
 }

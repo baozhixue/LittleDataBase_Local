@@ -264,24 +264,22 @@ namespace baozhixue
     template <typename T>
     bool ListBTree<T>::Balance_Leaf_Nodes(Node_LBTree<T>* father_node)
     {
-        if (father_node->keys_child_size == 0)
+        if (father_node->keys_child.Size == 0)
         {
             return false;
         }
-
         // 寻找第一个不满足条件的节点
         size_t index = 0;
         Node_LBTree<T>* Left, * Right;
-        for (; index < father_node->keys_size; ++index)
+        for (; index < father_node->keys.Size; ++index)
         {
             if (father_node->keys_child[index]->keys.Size < KEYS_MID)
             {
                 break;
             }
         }
-
         // 检测节点左侧兄弟是否满足替换
-        if (index > 0)
+        if (index > 0 || index == father_node->keys.Size)
         {
             Right = father_node->keys_child[index];
             if (father_node->keys_child[index - 1]->keys.Size > KEYS_MID)
@@ -292,7 +290,7 @@ namespace baozhixue
                 father_node->keys[index - 1] = Left->keys.tail->element;
                 Left->keys.pop_back();
 
-                if (Left->keys_child_size > 0)
+                if (Left->keys_child.Size > 0)
                 {
                     Right->keys_child.push_front(Left->keys_child.tail->element);
                     Left->keys_child.pop_back();
@@ -301,21 +299,22 @@ namespace baozhixue
             }
         }
         // 检测右侧
+        
         if (index < father_node->keys.Size)
         {
             Left = father_node->keys_child[index];
             if (father_node->keys_child[index + 1]->keys.Size > KEYS_MID)
             {
                 Right = father_node->keys_child[index + 1];
-                Right->keys.push_back(father_node->keys[index]);
+                Left->keys.push_back(father_node->keys[index]);
 
                 father_node->keys[index] = Left->keys[0];
-                Left->keys.pop_front();
+                Right->keys.pop_front();
 
-                if (Left->keys_child_size > 0)
+                if (Right->keys_child.Size > 0)
                 {
-                    Right->keys_child.push_back(Left->keys_child.tail->element);
-                    Left->keys_child.pop_front();
+                    Left->keys_child.push_back(Left->keys_child.tail->element);
+                    Right->keys_child.pop_front();
                 }
                 return true;
             }
@@ -383,7 +382,7 @@ namespace baozhixue
                 // 在叶节点中删除该值
                 find_node->keys.remove_index(index);
             }
-            
+
             while (true)
             {
                 if (find_node->keys.Size >= KEYS_MID || find_node == root) // 没有发生下溢，即节点数量>=MAX_KEYS_SIZE/2; 或者节点为根节点

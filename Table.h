@@ -38,7 +38,6 @@ namespace baozhixue
             store_path = _store_path;
         }
 
-
         Statement statement;
         int getFilesNum(string path);
         void getAllFiles(string path, vector<string>& files);

@@ -17,21 +17,31 @@
 #include <string>
 using std::string ;
 
+#include "DB_STRING.h"
+
 namespace baozhixue
 {
+    enum class ele_format { 
+        INT_DB, DOUBLE_DB, CHAR_DB, CHARS_DB,NONE };
+    
     union element {
         int INT_DB;
         double DOUBLE_DB;
         char CHAR_DB;
-        char* STR;
+        //char* STR;  
+        baozhixue::DB_STRING* STR2;
     };
-    enum ele_format { INT_DB, DOUBLE_DB, CHAR_DB, CHARS_DB };
+    
 
-    struct ELEMENT
+    class ELEMENT
     {
+    public:
+        ELEMENT() = default;
+        ELEMENT(const ele_format& type, const string& el);
+        
         element ele;
         ele_format format;
-        ELEMENT(const ele_format& type, const string& el);
+        
         bool operator==(const ELEMENT& el);
         bool operator>(const ELEMENT& el);
         bool operator<(const ELEMENT& el);
@@ -40,17 +50,18 @@ namespace baozhixue
             string str;
             switch (format)
             {
-            case INT_DB:
+            case ele_format::INT_DB:
                 str = std::to_string(ele.INT_DB);
                 break;
-            case DOUBLE_DB:
+            case ele_format::DOUBLE_DB:
                 str = std::to_string(ele.DOUBLE_DB);
                 break;
-            case CHAR_DB:
+            case ele_format::CHAR_DB:
                 str = std::to_string(ele.CHAR_DB);
                 break;
-            case CHARS_DB: // string
-                str = ele.STR;
+            case ele_format::CHARS_DB: // string
+                //str = ele.STR;
+                str = *ele.STR2;
                 break;
             }
             return str;
@@ -68,22 +79,23 @@ namespace baozhixue
         format = type;
         switch (type)
         {
-        case INT_DB:
+        case ele_format::INT_DB:
             ele.INT_DB = std::stoi(el);
             break;
-        case DOUBLE_DB:
+        case ele_format::DOUBLE_DB:
             ele.DOUBLE_DB = std::stod(el);
             break;
-        case CHAR_DB:
+        case ele_format::CHAR_DB:
             ele.CHAR_DB = el[0];
             break;
-        case CHARS_DB: // string
-            ele.STR = (char*)malloc(1 + el.length() * sizeof(char));
-            if (ele.STR != nullptr)
-            {
-                memcpy(ele.STR, el.c_str(), el.length() + 1);
-                ele.STR[el.length()] = '\0';
-            }
+        case ele_format::CHARS_DB: // string
+            //ele.STR = (char*)malloc(1 + el.length() * sizeof(char));
+            //if (ele.STR != nullptr)
+            //{
+            //    memcpy(ele.STR, el.c_str(), el.length() + 1);
+            //    ele.STR[el.length()] = '\0';
+            //}
+            ele.STR2 = new baozhixue::DB_STRING(el);
             break;
         }
     }
@@ -102,21 +114,17 @@ namespace baozhixue
         }
         switch (format)
         {
-        case INT_DB:
+        case ele_format::INT_DB:
             return ele.INT_DB == el.ele.INT_DB;
             break;
-        case DOUBLE_DB:
+        case ele_format::DOUBLE_DB:
             return ele.DOUBLE_DB == el.ele.DOUBLE_DB;
             break;
-        case CHAR_DB:
+        case ele_format::CHAR_DB:
             return ele.CHAR_DB == el.ele.CHAR_DB;
             break;
-        case CHARS_DB: // string
-            if (strcmp(ele.STR, el.ele.STR) == 0)
-            {
-                return 1;
-            }
-            return 0;
+        case ele_format::CHARS_DB: // string
+            return ele.STR2 == el.ele.STR2;
             break;
         }
     }
@@ -128,21 +136,17 @@ namespace baozhixue
         }
         switch (format)
         {
-        case INT_DB:
+        case ele_format::INT_DB:
             return ele.INT_DB > el.ele.INT_DB;
             break;
-        case DOUBLE_DB:
+        case ele_format::DOUBLE_DB:
             return ele.DOUBLE_DB > el.ele.DOUBLE_DB;
             break;
-        case CHAR_DB:
+        case ele_format::CHAR_DB:
             return ele.CHAR_DB > el.ele.CHAR_DB;
             break;
-        case CHARS_DB: // string
-            if (strcmp(ele.STR, el.ele.STR) == 1)
-            {
-                return true;
-            }
-            return false;
+        case ele_format::CHARS_DB: // string
+            return ele.STR2 > el.ele.STR2;
             break;
         }
     }
@@ -154,21 +158,17 @@ namespace baozhixue
         }
         switch (format)
         {
-        case INT_DB:
+        case ele_format::INT_DB:
             return ele.INT_DB < el.ele.INT_DB;
             break;
-        case DOUBLE_DB:
+        case ele_format::DOUBLE_DB:
             return ele.DOUBLE_DB < el.ele.DOUBLE_DB;
             break;
-        case CHAR_DB:
+        case ele_format::CHAR_DB:
             return ele.CHAR_DB < el.ele.CHAR_DB;
             break;
-        case CHARS_DB: // string
-            if (strcmp(ele.STR, el.ele.STR) == -1)
-            {
-                return 1;
-            }
-            return 0;
+        case ele_format::CHARS_DB: // string
+            return ele.STR2 < el.ele.STR2;
             break;
         }
     }

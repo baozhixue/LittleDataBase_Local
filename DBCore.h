@@ -60,8 +60,8 @@ namespace baozhixue
         while (EXIT != true)
         {
             printf("db > ");
-            getline(inFile, command_inputs);
-            cout << command_inputs << "\n";
+            getline(cin, command_inputs);
+            //cout << command_inputs << "\n";
 
             switch (prepare_statement(command_inputs))
             {

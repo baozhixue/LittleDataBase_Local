@@ -26,12 +26,5 @@ int main() {
 
     baozhixue::DBCore db;
     db.RUN();
-
-
     return 0;
 }
-
-/*
-   在ListNode中加入析构函数
-
-*/

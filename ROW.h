@@ -37,7 +37,7 @@ namespace baozhixue
         }
 
         ROW() = default;
-        void operator >>(string& str);
+        void operator>>(string& str);
         bool operator<<(string str);
         bool operator>(const ROW& R);
         bool operator<(const ROW& R);

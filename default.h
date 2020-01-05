@@ -66,17 +66,17 @@ namespace baozhixue
             {
                 if (init_dic[i][2] == "int")
                 {
-                    init_ROW.push_back(ELEMENT(baozhixue::INT_DB, "0"));
+                    init_ROW.push_back(ELEMENT(baozhixue::ele_format::INT_DB, "0"));
                     Labels.push_back(init_dic[i][1]);
                 }
                 else if (init_dic[i][2] == "string")
                 {
-                    init_ROW.push_back(ELEMENT(baozhixue::CHARS_DB, ""));
+                    init_ROW.push_back(ELEMENT(baozhixue::ele_format::CHARS_DB, ""));
                     Labels.push_back(init_dic[i][1]);
                 }
                 else if (init_dic[i][2] == "char")
                 {
-                    init_ROW.push_back(ELEMENT(baozhixue::CHAR_DB, ""));
+                    init_ROW.push_back(ELEMENT(baozhixue::ele_format::CHAR_DB, ""));
                     Labels.push_back(init_dic[i][1]);
                 }
             }
