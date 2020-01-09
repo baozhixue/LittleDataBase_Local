@@ -19,6 +19,7 @@ using std::cout;
 
 #include "default.h"
 #include "Table.h"
+#include "Message.h"
 using baozhixue::Table;
 
 
@@ -40,7 +41,7 @@ namespace baozhixue
         void create_new_table(string table_name);
         void load_old_table(string table_name);
         string now_time();
-        baozhixue::StatementType running_statement = baozhixue::STATEMENT_NONE;  // DBCore对输入命令的处理结果
+        baozhixue::StatementType running_statement = baozhixue::StatementType::STATEMENT_NONE;  // DBCore对输入命令的处理结果
         bool select_init(string);
         bool insert_init(string);
         bool create_init(string);
@@ -48,46 +49,55 @@ namespace baozhixue
         bool save_init();
         bool update_init(string);   // 待添加
         bool delete_init(string);   // 待添加
+        bool server_init(string);   // 实现服务器版本
+        bool client_init(string);   // 实现客户端版本
+
+        bzx_message::Message message;
     };
 
 
     void DBCore::RUN()
     {
-        time_t bt = clock();
-        ifstream inFile;
-        inFile.open("test.txt", std::ios::in);
+        
         string command_inputs;
+        message.test_mode("test2.txt");
         while (EXIT != true)
         {
-            printf("db > ");
-            getline(cin, command_inputs);
-            //cout << command_inputs << "\n";
-
+            command_inputs = message.INPUT();    
             switch (prepare_statement(command_inputs))
             {
-            case (baozhixue::PREPARE_SUCCESS):
+            case (baozhixue::PrepareResult::PREPARE_SUCCESS):
                 break;
-            case (baozhixue::PREPARE_UNRECOGNIZED_STATEMENT):
-                cout << "Unrecognized keyword at start of " << command_inputs << " .\n";
+            case (baozhixue::PrepareResult::PREPARE_UNRECOGNIZED_STATEMENT):
+                message.OUTPUT("Unrecognized keyword at start of " + command_inputs + ".");
+                message.OUTPUT("Executed!");
                 continue;
                 break;
+            case baozhixue::PrepareResult::STATEMENT_INIT_CLIENT:
+            case baozhixue::PrepareResult::STATEMENT_INIT_SERVER:
+                continue;
+                break;
+            case baozhixue::PrepareResult::STATEMENT_CLIENT:
+                message.OUTPUT("");
+                continue;
             default:
                 break;
             }
-
+            
             switch (execute_statement(command_inputs))
             {
-            case (baozhixue::EXECUTE_SUCCESS):
-                cout << "Executed!\n";
+            case (baozhixue::ExecuteResult::EXECUTE_SUCCESS):
+                message.OUTPUT("Executed!");
                 break;
-            case (baozhixue::EXECUTE_TABLE_FULL):
-                cout << "Error : Table full.\n";
+            case (baozhixue::ExecuteResult::EXECUTE_TABLE_FULL):
+                message.OUTPUT("Error : Table full.");
                 break;
             default:
                 break;
             }
         }
-        cout << "total time is " << (clock() - bt) / CLOCKS_PER_SEC << " s\n";
+        
+        system("pause");
     }
 
 
@@ -102,21 +112,34 @@ namespace baozhixue
 
     void DBCore::create_new_table(string table_name)
     {
-        cout << "----------------------------------------\n";
-        cout << "support type : int , string\n";
-        cout << " WARNING : Case sensitive\n";
-        cout << "example:\n";
-        cout << "command  label   type    optional\n";
-        cout << "  ADD    name    string     16       (16 is name length)\n";
-        cout << "  ADD    year     int \n";
-        cout << " SEARCH   name \n";
-        cout << "  EXIT \n";
-        cout << "----------------------------------------\n";
+        string str = "----------------------------------------\n"
+                    "support type : int , string\n"
+                    " WARNING : Case sensitive\n"
+                    "example:\n"
+                    "command  label   type    optional\n"
+                    "  ADD    name    string     16       (16 is name length)\n"
+                    "  ADD    year     int \n"
+                    "  SEARCH   name \n"
+                    "  end table \n"
+                    "----------------------------------------";
 
-        string str;
+        
         vector<vector<string>> dic;
         vector<string> tmp;
-        while (std::getline(cin, str) && str != "EXIT")
+        //while (std::getline(cin, str) && str != "EXIT")
+        message.OUTPUT(str);
+        if (message.get_rm() == bzx_message::RUNNING_MODE::SERVER)
+        {
+            message.SERVER_NEXT_INPUT();
+        }
+        
+        str = message.INPUT("  >");
+        if (message.get_rm() == bzx_message::RUNNING_MODE::SERVER)
+        {
+            message.SERVER_NEXT_INPUT();
+        }
+
+        while(str != "end table")
         {
             stringstream In(str);
             while (In >> str)
@@ -125,18 +148,27 @@ namespace baozhixue
             }
             dic.push_back(tmp);
             tmp.clear();
+            str = message.INPUT("  >");
+            if (message.get_rm() == bzx_message::RUNNING_MODE::SERVER && str != "end table")
+            {
+                message.SERVER_NEXT_INPUT();
+            }
         }
 
         string store_path = root_path + table_name + "\\";
 
         db.push_back(Table(table_name, dic, store_path));
-
-        cout << "init done!\n";
+        message.OUTPUT("init done!");
 
         // 将dic保存至 DB 路径下的dic.txt文件，留作下次加载数据时的依据
         if (_access(store_path.c_str(), 0) == -1)
         {
-            _mkdir(store_path.c_str());
+            if (_mkdir(store_path.c_str())==-1)
+            {
+                message.OUTPUT("failed to mkdir " + store_path);
+                return;
+            }
+
         }
         string dic_path = store_path + "dic.txt";
         ofstream outFile;
@@ -150,91 +182,139 @@ namespace baozhixue
             outFile << "\n";
         }
         outFile.close();
+        message.OUTPUT("save dic done!");
     }
 
 
     baozhixue::PrepareResult DBCore::prepare_statement(const string& command)
     {
-        if (command == "show tables")
+        if (command == "exit")
         {
-            for (auto el : db)
+            running_statement = baozhixue::StatementType::STATEMENT_EXIT;
+            return baozhixue::PrepareResult::PREPARE_SUCCESS;
+        }
+        else if (message.get_rm() != bzx_message::RUNNING_MODE::USER)
+        {
+            if (command == "show tables")
             {
-                cout << el.get_name() << "\n";
+                for (auto el : db)
+                {
+                    message.OUTPUT(el.get_name());
+                }
+                running_statement = baozhixue::StatementType::STATEMENT_INVALID; // 无后续操作
             }
-            running_statement = baozhixue::STATEMENT_INVALID; // 无后续操作
-        }
-        else if (command.substr(0, 6) == "insert")
-        {
-            running_statement = baozhixue::STATEMENT_INSERT;
-        }
-        else if (command.substr(0, 6) == "select")
-        {
-            running_statement = baozhixue::STATEMENT_SELECT;
-        }
-        else if (command.substr(0, 6) == "delete")
-        {
-            running_statement = baozhixue::STATEMENT_DELETE;
-        }
-        else if (command == "exit")
-        {
-            running_statement = baozhixue::STATEMENT_EXIT;
-        }
-        else if (command.substr(0, 6) == "create")
-        {
-            running_statement = baozhixue::STATEMENT_CREATE;
-        }
-        else if (command.substr(0, 4) == "load")
-        {
-            running_statement = baozhixue::STATEMENT_LOAD;
-        }
+            else if (command.substr(0, 6) == "insert")
+            {
+                running_statement = baozhixue::StatementType::STATEMENT_INSERT;
+            }
+            else if (command.substr(0, 6) == "select")
+            {
+                running_statement = baozhixue::StatementType::STATEMENT_SELECT;
+            }
+            else if (command.substr(0, 6) == "delete")
+            {
+                running_statement = baozhixue::StatementType::STATEMENT_DELETE;
+            }
+            else if (command == "exit")
+            {
+                running_statement = baozhixue::StatementType::STATEMENT_EXIT;
+            }
+            else if (command.substr(0, 6) == "create")
+            {
+                running_statement = baozhixue::StatementType::STATEMENT_CREATE;
+            }
+            else if (command.substr(0, 4) == "load")
+            {
+                running_statement = baozhixue::StatementType::STATEMENT_LOAD;
+            }
+            else if (command.substr(0, 6) == "server" && server_init(command))
+            {
+                return baozhixue::PrepareResult::STATEMENT_INIT_SERVER;
+            }
+            else if (command.substr(0, 6) == "client" && client_init(command))
+            {
+                return baozhixue::PrepareResult::STATEMENT_INIT_CLIENT;
+            }
 
-
-        if (running_statement != baozhixue::STATEMENT_NONE)
-        {
-            return baozhixue::PREPARE_SUCCESS;
+            if (running_statement != baozhixue::StatementType::STATEMENT_NONE)
+            {
+                return baozhixue::PrepareResult::PREPARE_SUCCESS;
+            }
+            return baozhixue::PrepareResult::PREPARE_UNRECOGNIZED_STATEMENT;
         }
-        return baozhixue::PREPARE_UNRECOGNIZED_STATEMENT;
+        return baozhixue::PrepareResult::STATEMENT_CLIENT;
     }
+
     baozhixue::ExecuteResult DBCore::execute_statement(const string& command)
     {
-        switch (running_statement)
+        if (running_statement == baozhixue::StatementType::STATEMENT_EXIT)
         {
-        case baozhixue::STATEMENT_INSERT:
-            insert_init(command);
-            break;
-        case baozhixue::STATEMENT_SELECT:
-            select_init(command);
-            break;
-        case baozhixue::STATEMENT_CREATE:
-            create_init(command);
-            break;
-        case baozhixue::STATEMENT_EXIT:
             save_init();
-            EXIT = true;
-            break;
-        case baozhixue::STATEMENT_LOAD:
-            load_init(command);
-            break;
-        case baozhixue::STATEMENT_DELETE:
-            delete_init(command);
-            break;
-        case baozhixue::STATEMENT_NONE_TABLE:
-            cout << "not exist any table!\n";
-            break;
+            if (message.get_rm() == bzx_message::RUNNING_MODE::SERVER)
+            {
+                message.SERVER_Kill(0);
+                return baozhixue::ExecuteResult::EXECUTE_CLIENT_EXIT;
+            }
+            else
+            {
+                if (message.get_rm() == bzx_message::RUNNING_MODE::USER) {
+                    message = bzx_message::Message();
+                }
+                EXIT = true;
+                return baozhixue::ExecuteResult::EXECUTE_SUCCESS;
+            }
         }
-
-        if (running_statement != baozhixue::STATEMENT_NONE)
+        else if(message.get_rm() != bzx_message::RUNNING_MODE::USER)
         {
-            running_statement = baozhixue::STATEMENT_NONE;
-            return baozhixue::EXECUTE_SUCCESS;
-        }
-        return baozhixue::EXECUTE_TABLE_FULL;
+            switch (running_statement)
+            {
+            case baozhixue::StatementType::STATEMENT_INSERT:
+                insert_init(command);
+                break;
+            case baozhixue::StatementType::STATEMENT_SELECT:
+                select_init(command);
+                break;
+            case baozhixue::StatementType::STATEMENT_CREATE:
+                create_init(command);
+                break;
+            //case baozhixue::StatementType::STATEMENT_EXIT:
+            //    save_init();
+            //    if (message.get_rm() == bzx_message::RUNNING_MODE::SERVER)
+            //    {
+            //        message.SERVER_Kill(0);
+            //        return baozhixue::ExecuteResult::EXECUTE_CLIENT_EXIT;
+            //    }
+            //    else
+            //    {
+            //        EXIT = true;
+            //        return baozhixue::ExecuteResult::EXECUTE_SUCCESS;
+            //    }
+            //    break;
+            case baozhixue::StatementType::STATEMENT_LOAD:
+                load_init(command);
+                break;
+            case baozhixue::StatementType::STATEMENT_DELETE:
+                delete_init(command);
+                break;
+            case baozhixue::StatementType::STATEMENT_NONE_TABLE:
+                message.OUTPUT("not exist any table!\n");
+                break;
+            }
+
+            if (running_statement != baozhixue::StatementType::STATEMENT_NONE)
+            {
+                running_statement = baozhixue::StatementType::STATEMENT_NONE;
+                return baozhixue::ExecuteResult::EXECUTE_SUCCESS;
+            }
+            return baozhixue::ExecuteResult::EXECUTE_TABLE_FULL;
+        }        
     }
 
     string DBCore::now_time()
     {
         time_t time_now = time(NULL);
-        return asctime(localtime(&time_now));
+        char* dst = asctime(localtime(&time_now));
+        return dst == NULL ? "" : dst;
     }
 
 
@@ -269,11 +349,11 @@ namespace baozhixue
                     {
                         if (match_result[1] == "*")
                         {
-                            tmp_table.Print();
+                            tmp_table.Print(message);
                         }
                         else
                         {
-                            cout << "command is not support now!\n";
+                            message.OUTPUT("command is not support now!\n");
                         }
                         return true;
                     }
@@ -281,7 +361,7 @@ namespace baozhixue
             }
             else if (pattern_match == 1)
             {
-                cout << now_time();
+                message.OUTPUT(now_time() + "\n");
                 return true;
             }
 
@@ -314,8 +394,11 @@ namespace baozhixue
             std::regex_search(command, match_result, std::regex(pattern[pattern_match]));
             if (pattern_match == 0)
             {
-                cout << " ->";
-                getline(cin, tmp_insert_data);
+                message.OUTPUT(" ->");
+                if (message.get_rm() == bzx_message::RUNNING_MODE::SERVER) {
+                    message.SERVER_NEXT_INPUT();
+                }
+                tmp_insert_data = message.INPUT();
                 for (auto& tmp_table : db)
                 {
                     if (tmp_table.get_name() == match_result[1])
@@ -400,7 +483,7 @@ namespace baozhixue
     bool DBCore::update_init(string command)
     {
         //目前仅支持修改整条数据
-        return true;
+        return false;
     }
 
     /*
@@ -439,6 +522,27 @@ namespace baozhixue
                     }
                 }
             }
+        }
+        return false;
+    }
+
+    /*
+        传入port，
+    */
+    bool DBCore::server_init(string command)   // 实现服务器版本
+    {
+        // server [可选，默认接口6666]
+        if (command == "server")
+        {
+            return message.SERVER();
+        }
+        return false;
+    }
+    bool DBCore::client_init(string command)   // 实现客户端版本
+    {
+        if (command == "client")
+        {
+            return message.CLIENT();
         }
         return false;
     }

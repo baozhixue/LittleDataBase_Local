@@ -5,7 +5,8 @@
 #ifndef B_PC_LISTBTREE_H
 #define B_PC_LISTBTREE_H
 
-#include "List.h"
+#include "List2.h"
+#include "Message.h"
 using baozhixue::List;
 using std::ofstream;
 
@@ -45,27 +46,29 @@ namespace baozhixue
         ListBTree<T>() = default;
 
         void Print();
+        void Print(bzx_message::Message& message);
         bool ADD(T el);
         bool Delete(T el);
-        Node_LBTree<T>* Find(T row);
         Find2_return_LB<T> Find2(T row);    // return find_node, father_node
         void set_root(Node_LBTree<T>* r) { root = r; }
         Node_LBTree<T>* get_root() { return root; }
 
     protected:
         Node_LBTree<T>* add(T el, Node_LBTree<T>* tmp);
-        void Print2(Node_LBTree<T>* node);
+        virtual void Print2(Node_LBTree<T>* node);
         void Print2(Node_LBTree<T>* node, ofstream& out);
+        void Print2(Node_LBTree<T>* node, bzx_message::Message& message);
         bool Balance_Leaf_Nodes(Node_LBTree<T>* father_node);
         void Merge_father_2_child_node(Node_LBTree<T>* father_node);
         Node_LBTree<T>* root = nullptr;
         size_t index = 0;
         //void operator +=(T el);  //equals B.ADD(el)
 
-        size_t MAX_KEYS_SIZE = 5;
-        size_t KEYS_MID = 2;
+        size_t MAX_KEYS_SIZE = 49;
+        size_t KEYS_MID = 24;
     };
 
+    
     template <typename  T>
     bool ListBTree<T>::ADD(T el) {
         if (root == nullptr)
@@ -180,7 +183,16 @@ namespace baozhixue
         Print2(tmp);
     }
 
-
+    template <typename  T>
+    void ListBTree<T>::Print(bzx_message::Message& message)
+    {
+        if (root == nullptr)
+        {
+            return;
+        }
+        Node_LBTree<T>* tmp = root;
+        Print2(tmp,message);
+    }
     template <typename T>
     void ListBTree<T>::Print2(Node_LBTree<T>* node)
     {
@@ -200,6 +212,29 @@ namespace baozhixue
         if (node->keys_child.Size > i)
         {
             Print2(node->keys_child[i]);
+        }
+    }
+
+    
+    template <typename  T>
+    void ListBTree<T>::Print2(Node_LBTree<T>* node, bzx_message::Message& message)
+    {
+        if (node == nullptr)
+        {
+            return;
+        }
+        size_t i = 0;
+        std::string str;
+        while (i < node->keys.Size)
+        {
+            if (node->keys_child.Size > i)
+                Print2(node->keys_child[i],message);
+            message.OUTPUT(node->keys[i]);
+            ++i;
+        }
+        if (node->keys_child.Size > i)
+        {
+            Print2(node->keys_child[i],message);
         }
     }
 

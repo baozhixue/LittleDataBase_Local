@@ -56,6 +56,7 @@ namespace baozhixue
     void Table::Load(string store_path, string table_name)
     {
         cout << "Load from " << store_path << "\n";
+        
         this->store_path = store_path;
         ifstream inFile;
         string tmp;

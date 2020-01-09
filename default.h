@@ -29,7 +29,7 @@ namespace baozhixue
     const int TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
 
-    enum StatementType {
+    enum class StatementType {
         STATEMENT_INSERT,    // 插入一条数据
         STATEMENT_SELECT,    // 选择符合条件的数据
         STATEMENT_INVALID,  // 输入命令无效
@@ -39,16 +39,27 @@ namespace baozhixue
         STATEMENT_CREATE,    // 创建一个新表
         STATEMENT_LOAD,      // 加载一个原有表
         STATEMENT_NONE_TABLE, // 未加载任何一个表
+        STATEMENT_CLIENT        // 客户端模式
     };
-    enum PrepareResult { PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATEMENT };
-    enum ExecuteResult { EXECUTE_SUCCESS, EXECUTE_TABLE_FULL };
+    enum class PrepareResult { 
+        PREPARE_SUCCESS, 
+        PREPARE_UNRECOGNIZED_STATEMENT,
+        STATEMENT_INIT_SERVER, // 初始化服务器
+        STATEMENT_INIT_CLIENT,  // 初始化客户端
+        STATEMENT_CLIENT,
+    };
+    enum class ExecuteResult { 
+        EXECUTE_SUCCESS, 
+        EXECUTE_TABLE_FULL,
+        EXECUTE_CLIENT_EXIT  // 客户断开链接
+    };
 
     /*
      *记录当前表的状态
      */
     struct Statement
     {
-        Statement() { type = STATEMENT_NONE; };
+        Statement() { type = StatementType::STATEMENT_NONE; };
         Statement(vector<vector<string>> init_dic);
         ROW row;   // 插入ListBtree
         StatementType type;

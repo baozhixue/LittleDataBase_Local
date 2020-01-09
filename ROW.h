@@ -42,6 +42,11 @@ namespace baozhixue
         bool operator>(const ROW& R);
         bool operator<(const ROW& R);
         bool operator==(const ROW& R);
+        operator string() {
+            string str;
+            *this >> str;
+            return str;
+        }
         friend  std::ostream& operator<<(std::ostream& output, const ROW& D)
         {
             string tmp;

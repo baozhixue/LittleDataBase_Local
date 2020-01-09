@@ -6,12 +6,12 @@
 
 */
 
-
 #include <iostream>
 #include <string>
 #include <vector>
 #include <sstream>
 #include <regex>
+#include <ctime>
 
 using std::vector;
 using std::string ;
@@ -21,6 +21,7 @@ using std::stringstream ;
 
 
 #include "DBCore.h"
+
 
 int main() {
 
