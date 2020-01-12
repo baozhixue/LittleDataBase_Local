@@ -1,6 +1,11 @@
 #ifndef LIST_H
 #define LIST_H
 
+/*
+ç›®å‰ä½¿ç”¨List2.h
+
+*/
+
 namespace baozhixue
 {
     template <typename T>
@@ -44,7 +49,7 @@ namespace baozhixue
         Node_List<T>* head = nullptr;
         Node_List<T>* tail = nullptr;
         Node_List<T>* mem_optimize = nullptr;
-        size_t index_optimize = 0;    //¼ÇÂ¼ÉÏ´Î·ÃÎÊÊ±µÄÏÂ±í
+        size_t index_optimize = 0;    //è®°å½•ä¸Šæ¬¡è®¿é—®æ—¶çš„ä¸‹è¡¨
     };
 
 
@@ -208,7 +213,7 @@ namespace baozhixue
     }
 
     /*
-        ½«List¼ôÇĞÖÁnewSize
+        å°†Listå‰ªåˆ‡è‡³newSize
     */
     template <typename T>
     void List<T>::resize(size_t new_Size)
@@ -226,8 +231,8 @@ namespace baozhixue
     }
 
     /*
-        ½«Á´±íË÷ÒıÎªindexµÄ½Úµã·µ»Ø£¬×÷ÎªÁíÒ»¸öÁ´±í¡£
-        Ô­Á´±íresize£¨index£©
+        å°†é“¾è¡¨ç´¢å¼•ä¸ºindexçš„èŠ‚ç‚¹è¿”å›ï¼Œä½œä¸ºå¦ä¸€ä¸ªé“¾è¡¨ã€‚
+        åŸé“¾è¡¨resizeï¼ˆindexï¼‰
     */
     template <typename T>
     List<T>* List<T>::cut(size_t index)
