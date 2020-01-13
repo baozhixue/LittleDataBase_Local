@@ -127,6 +127,7 @@ namespace baozhixue
             return ele.STR2 == el.ele.STR2;
             break;
         }
+        return false;
     }
     bool ELEMENT::operator>(const ELEMENT& el)
     {
@@ -149,6 +150,7 @@ namespace baozhixue
             return ele.STR2 > el.ele.STR2;
             break;
         }
+        return false;
     }
     bool ELEMENT::operator<(const ELEMENT& el)
     {
@@ -171,6 +173,7 @@ namespace baozhixue
             return ele.STR2 < el.ele.STR2;
             break;
         }
+        return false;
     }
 }
 

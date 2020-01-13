@@ -6,6 +6,8 @@
 
 */
 
+# pragma warning (disable:4819)
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -27,5 +29,7 @@ int main() {
 
     baozhixue::DBCore db;
     db.RUN();
+
+
     return 0;
 }

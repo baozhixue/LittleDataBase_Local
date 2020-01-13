@@ -269,7 +269,7 @@ namespace baozhixue
 
         while (FR2.find_node != nullptr)
         {
-            int i = 0;
+            size_t i = 0;
             for (; i < FR2.find_node->keys.Size; ++i)
             {
                 if (row == FR2.find_node->keys[i])
@@ -361,7 +361,7 @@ namespace baozhixue
     void ListBTree<T>::Merge_father_2_child_node(Node_LBTree<T>* father_node)
     {
         //
-        int index = 0;
+        size_t index = 0;
         for (; index < father_node->keys.Size - 1; ++index)
         {
             if (father_node->keys_child[index]->keys.Size < KEYS_MID)
@@ -375,11 +375,11 @@ namespace baozhixue
 
         A->keys.push_back(father_node->keys[index]);
 
-        for (int i = 0; i < B->keys.Size; ++i)
+        for (size_t i = 0; i < B->keys.Size; ++i)
         {
             A->keys.push_back(B->keys[i]);
         }
-        for (int i = 0; i < B->keys_child.Size; ++i)
+        for (size_t i  = 0; i < B->keys_child.Size; ++i)
         {
             A->keys_child.push_back(B->keys_child[i]);
         }
@@ -454,6 +454,5 @@ namespace baozhixue
         }
         return false;
     }
-
 }
 #endif //B_PC_LISTBTREE_H

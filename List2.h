@@ -55,13 +55,17 @@ namespace baozhixue {
         Node_List<T>& operator()(size_t i); // return Node_list
         void resize(size_t new_Size);
         List<T>* cut(size_t index);
-
+        T& End() {
+            return *END;
+        }
 
         size_t Size = 0;
         Node_List<T>* head = nullptr;
         Node_List<T>* tail = nullptr;
         Node_List<T>* mem_optimize = nullptr;
         size_t index_optimize = 0;    //记录上次访问时的下表
+        
+        T* END = NULL;
     };
 
 
@@ -130,7 +134,7 @@ namespace baozhixue {
     template <typename T>
     Node_List<T>& List<T>::operator()(size_t i)
     {
-        Node_List<T>* t;
+        Node_List<T>* t = nullptr;
         if (i < Size)
         {
             if (i == 0)
@@ -204,10 +208,12 @@ namespace baozhixue {
         }
     }
 
+    /*
+        当索引值大于Size时返回Tail
+    */
     template <typename T>
     T& List<T>::operator[](size_t i)
     {
-        T t;
         if (i < Size)
         {
             if (i == 0)
@@ -228,7 +234,7 @@ namespace baozhixue {
                 return tmp->element;
             }
         }
-        return t;
+        return *END;
     }
 
     /*

@@ -1,3 +1,5 @@
+
+
 //
 // Created by 123 on 2019/12/15.
 //
@@ -60,7 +62,7 @@ namespace baozhixue
     {
         
         string command_inputs;
-        message.test_mode("test2.txt");
+        //message.test_mode("test2.txt");
         while (EXIT != true)
         {
             command_inputs = message.INPUT();    
@@ -300,14 +302,13 @@ namespace baozhixue
                 message.OUTPUT("not exist any table!\n");
                 break;
             }
-
             if (running_statement != baozhixue::StatementType::STATEMENT_NONE)
             {
                 running_statement = baozhixue::StatementType::STATEMENT_NONE;
                 return baozhixue::ExecuteResult::EXECUTE_SUCCESS;
             }
-            return baozhixue::ExecuteResult::EXECUTE_TABLE_FULL;
-        }        
+        }     
+        return baozhixue::ExecuteResult::EXECUTE_TABLE_FULL;
     }
 
     string DBCore::now_time()

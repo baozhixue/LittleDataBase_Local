@@ -71,7 +71,7 @@ namespace baozhixue
 
     Statement::Statement(vector<vector<string>> init_dic)
     {
-        for (int i = 0; i < init_dic.size() - 1; ++i)
+        for (size_t i = 0; i < init_dic.size() - 1; ++i)
         {
             if (init_dic[i][0] == "ADD")
             {

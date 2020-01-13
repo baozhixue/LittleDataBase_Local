@@ -20,6 +20,7 @@
 #pragma comment(lib, "ws2_32.lib")
 
 #include "DB_STRING.h"
+#include "base64.h"
 
 namespace bzx_message {
 	enum class RUNNING_MODE { SERVER,USER,LOCAL,TEST };   //默认模式为LOCAL，若选择模式为USER必须连接SERVER
@@ -66,6 +67,7 @@ namespace bzx_message {
 		std::ifstream inFile;
 		char send_buf[1024] = { '\0' };
 		char recv_buf[1024] = { '\0' };
+		base64_bzx::base64 base64;
 	};
 
 	bool Server::init(int _port)
@@ -146,14 +148,15 @@ namespace bzx_message {
 				}
 			}
 			recv(server.sockConn, recv_buf, 1024, 0);
-			command_input = recv_buf;
+			//command_input = recv_buf;
+			command_input = base64.decode(recv_buf);
 			cout << command_input << "\n";
 			break;
 		case bzx_message::RUNNING_MODE::USER:
 			std::cout << "db>";
 			std::cin.getline(send_buf, 1024);
-			send(client.sockSrv, send_buf, 1024, 0);
 			command_input = send_buf;
+			send(client.sockSrv, base64.encode(send_buf), 1024, 0);
 			break;
 		case bzx_message::RUNNING_MODE::LOCAL:
 			std::cout << "db>";
@@ -176,17 +179,18 @@ namespace bzx_message {
 		case bzx_message::RUNNING_MODE::SERVER:
 			memcpy(send_buf, str.c_str(), str.length());
 			send_buf[min(str.length(), 1023)] = '\0';
-			send(server.sockConn, send_buf, 1024, 0);
+			send(server.sockConn, base64.encode(send_buf), 1024, 0);
 			memset(send_buf, '\0', 1024);
 			break;
 		case bzx_message::RUNNING_MODE::USER:
 			while (true)
 			{
 				recv(client.sockSrv, recv_buf, 1024, 0);
-				std::cout << recv_buf << "\n";
-				if (strcmp(recv_buf, "bzx") == 0) { break; }
-				if (strcmp(recv_buf, "Executed!") == 0||
-					strcmp(recv_buf, "Error : Table full.")==0)
+				char* tmp = base64.decode(recv_buf);
+				std::cout << tmp << "\n";
+				if (strcmp(tmp, "bzx") == 0) { break; }
+				if (strcmp(tmp, "Executed!") == 0||
+					strcmp(tmp, "Error : Table full.")==0)
 				{
 					break;
 				}
@@ -255,8 +259,6 @@ namespace bzx_message {
 		OUTPUT("bzx");
 		return true;
 	}
-
-
 }
 
 #endif // !MESSAGE_H
